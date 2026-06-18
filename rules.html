@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>How to Play — Sudoku Grand</title>
+<style>
+  :root{--void:#040507;--gold:#d4a544;--gold-bright:#f0cd72;--gold-dim:#6a521f;--ash:#4a5266;--ice:#e8edf5;--grid:#1a2c4a;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%;background:var(--void);color:var(--ice);font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+  body{padding:20px 18px 40px;max-width:460px;margin:0 auto}
+  .back{display:inline-flex;align-items:center;gap:6px;color:var(--gold);font-size:10px;letter-spacing:2px;
+    text-transform:uppercase;text-decoration:none;margin-bottom:24px;opacity:.8}
+  .back:active{opacity:.5}
+  h1{font-size:20px;letter-spacing:5px;font-weight:300;color:var(--gold-bright);margin-bottom:4px}
+  h1 b{font-weight:600}
+  .tagline{font-size:9px;letter-spacing:3px;color:var(--gold-dim);text-transform:uppercase;margin-bottom:28px}
+  .section{margin-bottom:28px}
+  .section h2{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);
+    border-bottom:1px solid rgba(212,165,68,.2);padding-bottom:8px;margin-bottom:14px}
+  .rule{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+  .rule .ic{font-size:18px;flex:none;width:28px;text-align:center;margin-top:1px}
+  .rule .tx{font-size:12px;line-height:1.7;color:#9fb0cc}
+  .rule .tx b{color:var(--ice)}
+  .powers{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+  .powers th{text-align:left;color:var(--gold-dim);letter-spacing:1px;font-size:9px;text-transform:uppercase;
+    padding:6px 8px;border-bottom:1px solid rgba(212,165,68,.15)}
+  .powers td{padding:9px 8px;border-bottom:1px solid rgba(26,44,74,.6);color:#9fb0cc;vertical-align:top}
+  .powers td:first-child{color:var(--gold-bright);font-size:16px;text-align:center}
+  .powers td b{color:var(--ice)}
+  .tip{background:rgba(212,165,68,.06);border:1px solid rgba(212,165,68,.15);border-radius:10px;
+    padding:12px 14px;font-size:11px;color:#9fb0cc;line-height:1.7;margin-top:6px}
+  .tip b{color:var(--gold-bright)}
+  .play-btn{display:block;text-align:center;background:linear-gradient(165deg,rgba(212,165,68,.2),rgba(106,82,31,.3));
+    border:1px solid rgba(212,165,68,.4);border-radius:12px;color:var(--gold-bright);text-decoration:none;
+    font-size:12px;letter-spacing:3px;text-transform:uppercase;padding:16px;margin-top:28px}
+  .play-btn:active{opacity:.7}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(212,165,68,.2),transparent);margin:24px 0}
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">‹ Back to menu</a>
+
+<h1>HOW TO <b>PLAY</b></h1>
+<div class="tagline">sudoku grand · two modes</div>
+
+<!-- THE BASICS -->
+<div class="section">
+  <h2>The Basics</h2>
+  <div class="rule">
+    <div class="ic">◈</div>
+    <div class="tx">Fill the <b>9×9 grid</b> so every row, every column, and every 3×3 box contains the numbers <b>1 through 9</b> — with no repeats.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">✦</div>
+    <div class="tx">Tap a <b>cell</b> to select it, then tap a <b>number</b> at the bottom to place it. Grey numbers are given — you cannot change them.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">✎</div>
+    <div class="tx"><b>Notes mode</b> — tap the pencil to toggle. In notes mode, tapping a number adds a small pencil mark to help you track possibilities.</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ADVANCED -->
+<div class="section">
+  <h2>◇ Advanced — The Solitary Descent</h2>
+  <div class="rule">
+    <div class="ic">◆◆◆</div>
+    <div class="tx">You start with <b>3 lives</b>. Every wrong number costs one life. Lose all three and the grid is lost.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">⚡</div>
+    <div class="tx">Complete a full <b>row, column, or box</b> and that section ignites — the yantra behind the board comes alive, piece by piece.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">🔥</div>
+    <div class="tx">Chain correct placements for <b>combos</b> — the longer your streak, the higher your score per move.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">◈</div>
+    <div class="tx">Use <b>Hints</b> (3 per game) when stuck. Use <b>Erase</b> to clear a cell you placed.</div>
+  </div>
+  <div class="tip">
+    <b>Win condition:</b> Fill every cell correctly. The yantra blazes to full radiance when the grid is complete.
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ELITE -->
+<div class="section">
+  <h2>◆ Elite — Duel The Ancient</h2>
+  <div class="rule">
+    <div class="ic">⚔</div>
+    <div class="tx">You and <b>The Ancient</b> — a mysterious rival — solve the same puzzle at the same time. <b>First to finish wins.</b></div>
+  </div>
+  <div class="rule">
+    <div class="ic">👁</div>
+    <div class="tx">Watch the rival's mini-board at the top. Its progress bar fills in real time. When it gets close, the screen pulses red and a <b>heartbeat</b> begins.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">⊙</div>
+    <div class="tx">Place numbers <b>1–5 correctly</b> to earn combat powers. Numbers <b>6–9</b> are plain — no power.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">💰</div>
+    <div class="tx">Earn <b>coins</b> by finishing duels. Win = +25 coins, lose = +8 coins. Spend coins to buy power charges mid-duel.</div>
+  </div>
+  <div class="tip">
+    <b>Win condition:</b> Complete your grid before The Ancient completes theirs. At the last second — silence, then eruption.
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- POWERS -->
+<div class="section">
+  <h2>⚡ Elite Powers</h2>
+  <table class="powers">
+    <thead>
+      <tr><th>#</th><th>Power</th><th>Effect</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>❄</td><td><b>Freeze</b><br>place a 1</td><td>Locks one of the rival's cells for a few seconds</td><td>15 ⊙</td></tr>
+      <tr><td>⛨</td><td><b>Shield</b><br>place a 2</td><td>Auto-blocks the next attack the rival sends at you</td><td>15 ⊙</td></tr>
+      <tr><td>↺</td><td><b>Undo</b><br>place a 3</td><td>Removes your last wrong placement, no penalty</td><td>10 ⊙</td></tr>
+      <tr><td>⇄</td><td><b>Swap</b><br>place a 4</td><td>Fills one of your cells AND removes one of the rival's. Once per duel.</td><td>40 ⊙</td></tr>
+      <tr><td>✦</td><td><b>Steal</b><br>place a 5</td><td>Takes a correct cell from the rival onto your board. Once per duel.</td><td>40 ⊙</td></tr>
+    </tbody>
+  </table>
+  <div class="tip" style="margin-top:12px">
+    <b>The rival attacks too.</b> It will occasionally freeze your cells. A shield blocks it automatically. Watch for <b>"THE ANCIENT BINDS YOU"</b> — that means one of your cells is frozen.
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- TIPS -->
+<div class="section">
+  <h2>💡 Tips</h2>
+  <div class="rule">
+    <div class="ic">1</div>
+    <div class="tx">In Elite, <b>save your Swap and Steal</b> — they're once per game. Use them when the rival is close to winning.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">2</div>
+    <div class="tx">In Advanced, <b>use Notes</b> to pencil in possibilities before committing — it saves lives.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">3</div>
+    <div class="tx">The <b>yantra lights up</b> as you solve. Complete rows and boxes to see more of it awaken.</div>
+  </div>
+  <div class="rule">
+    <div class="ic">4</div>
+    <div class="tx">The rival <b>rubber-bands</b> — it speeds up when you're ahead and slows when it's ahead. It's always close. Don't relax.</div>
+  </div>
+</div>
+
+<a class="play-btn" href="index.html">↩ Back to Game</a>
+
+</body>
+</html>
