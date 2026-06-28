@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>SUDOKU GRAND — Arrival</title>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<style>
+  :root{
+    --void:#040507; --ink:#0a0c12;
+    --gold:#d4a544; --gold-bright:#f0cd72; --gold-dim:#7a5e24;
+    --neon:#c8943a; --foe:#a06828;
+    --ash:#4a5266; --ice:#e8edf5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  html,body{height:100%;overflow:hidden}
+  body{background:var(--void);color:var(--ice);
+    font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;position:relative}
+
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+  /* ── YANTRA ── */
+  .yantra-wrap{position:relative;width:min(78vw,340px);aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+  svg.yantra{width:100%;height:100%;overflow:visible}
+  svg.yantra path,svg.yantra circle,svg.yantra polygon,svg.yantra line{
+    stroke:var(--gold);fill:none;stroke-width:1;
+    filter:drop-shadow(0 0 3px rgba(212,165,68,.5));
+    stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+  }
+  .bindu{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--gold-bright);
+    box-shadow:0 0 0 0 rgba(240,205,114,.7);opacity:0}
+
+  /* ── TITLE ── */
+  .title-block{position:absolute;text-align:center;opacity:0;transform:translateY(8px)}
+  .kicker{font-size:9px;letter-spacing:8px;color:var(--gold-dim);text-transform:uppercase;margin-bottom:10px}
+  .title{font-size:clamp(26px,8vw,38px);letter-spacing:8px;font-weight:300;line-height:1;color:var(--ice)}
+  .title b{font-weight:600;color:var(--gold-bright);text-shadow:0 0 24px rgba(240,205,114,.4)}
+  .underline{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:14px auto 0}
+
+  /* ── MODES ── */
+  .modes{position:absolute;bottom:7vh;width:100%;max-width:340px;padding:0 24px;
+    display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(12px)}
+  .mode{position:relative;border:1px solid rgba(74,82,102,.3);border-radius:14px;padding:16px 20px;cursor:pointer;
+    background:linear-gradient(165deg,rgba(10,8,4,.85),rgba(6,5,2,.95));overflow:hidden;transition:transform .15s ease,border-color .2s}
+  .mode:active{transform:scale(.98)}
+  .mode .ml{font-size:15px;font-weight:700;letter-spacing:3px}
+  .mode.adv .ml{color:var(--neon)} .mode.eli .ml{color:var(--foe)} .mode.dly .ml{color:var(--gold-bright)}
+  .mode .md{font-size:9px;color:var(--ash);margin-top:3px;letter-spacing:1px}
+  .mode .edge{position:absolute;left:0;top:0;bottom:0;width:2px;opacity:.6}
+  .mode.adv .edge{background:var(--gold-bright)} .mode.eli .edge{background:var(--gold-dim)} .mode.dly .edge{background:var(--gold)}
+  .mode.dly{border-color:rgba(212,165,68,.2);background:linear-gradient(165deg,rgba(14,10,2,.9),rgba(8,6,2,.95))}
+
+  /* ── WALLET STRIP ── */
+  .wallet-strip{position:absolute;top:0;left:0;right:0;padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(180deg,rgba(4,5,7,.95),transparent);
+    z-index:20}
+  .w-brand{font-size:9px;letter-spacing:4px;color:var(--gold-dim);text-transform:uppercase}
+  .w-right{display:flex;align-items:center;gap:10px}
+  .w-addr{font-size:9px;letter-spacing:1px;color:var(--ash);font-variant-numeric:tabular-nums;
+    background:rgba(212,165,68,.06);border:1px solid rgba(212,165,68,.15);
+    border-radius:20px;padding:5px 11px;display:none}
+  .w-addr.show{display:block}
+  .w-btn{font-size:9px;letter-spacing:2px;color:var(--gold-bright);text-transform:uppercase;
+    background:rgba(212,165,68,.1);border:1px solid rgba(212,165,68,.3);
+    border-radius:20px;padding:7px 14px;cursor:pointer;font-family:inherit;
+    transition:background .2s,border-color .2s;white-space:nowrap}
+  .w-btn:hover{background:rgba(212,165,68,.18);border-color:rgba(212,165,68,.5)}
+  .w-btn:active{transform:scale(.96)}
+  .w-dot{width:6px;height:6px;border-radius:50%;background:#4fd6a8;
+    box-shadow:0 0 8px #4fd6a8;display:none}
+  .w-dot.show{display:block}
+
+  /* ── COINS BADGE (shows when wallet connected) ── */
+  .coins-badge{position:absolute;top:52px;right:20px;z-index:20;
+    font-size:9px;letter-spacing:2px;color:var(--gold-bright);
+    background:rgba(212,165,68,.08);border:1px solid rgba(212,165,68,.2);
+    border-radius:20px;padding:5px 12px;display:none;align-items:center;gap:6px}
+  .coins-badge.show{display:flex}
+  .coins-badge span{color:var(--gold-bright);font-weight:600;font-variant-numeric:tabular-nums}
+
+  /* particles */
+  .particles{position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:0;transition:opacity 3s}
+  .pt{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--gold);opacity:.0}
+  .vignette{position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(70% 60% at 50% 45%,transparent 30%,rgba(4,5,7,.7) 100%)}
+
+  /* tap hint */
+  .tap-hint{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:var(--void);cursor:pointer;transition:opacity 1s}
+  .tap-hint.gone{opacity:0;pointer-events:none}
+  .tap-hint .th-inner{text-align:center}
+  .tap-hint .th-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);margin:0 auto 18px;
+    animation:breathe 2.4s ease-in-out infinite;box-shadow:0 0 16px var(--gold)}
+  @keyframes breathe{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+  .tap-hint .th-t{font-size:10px;letter-spacing:6px;color:var(--gold-dim);text-transform:uppercase}
+
+  .replay{position:fixed;bottom:14px;right:14px;font-size:9px;letter-spacing:2px;color:#2a3142;
+    cursor:pointer;z-index:60;text-transform:uppercase}
+
+  /* TON modal override — keep it centered */
+  #ton-connect-ui{z-index:9999!important}
+</style>
+</head>
+<body>
+
+<!-- ── WALLET STRIP ── -->
+<div class="wallet-strip">
+  <div class="w-brand">Sudoku Grand</div>
+  <div class="w-right">
+    <div class="w-dot" id="wDot"></div>
+    <div class="w-addr" id="wAddr"></div>
+    <button class="w-btn" id="wBtn">Connect Wallet</button>
+  </div>
+</div>
+
+<!-- ── COINS BADGE ── -->
+<div class="coins-badge" id="coinsBadge">
+  <span>⊙</span>
+  <span id="coinsVal">0</span>
+  <span style="color:var(--gold-dim);font-size:8px">COINS</span>
+</div>
+
+<div class="particles" id="particles"></div>
+<div id="stage">
+  <div class="yantra-wrap">
+    <div class="bindu" id="bindu"></div>
+    <svg class="yantra" id="yantra" viewBox="0 0 300 300"></svg>
+    <div class="title-block" id="titleBlock">
+      <div class="kicker">enter the</div>
+      <div class="title">SUDOKU <b>GRAND</b></div>
+      <div class="underline" id="underline"></div>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <div class="mode adv" onclick="launch('advanced-final.html')">
+      <div class="edge"></div>
+      <div class="ml">ADVANCED</div>
+      <div class="md">the solitary descent · solo</div>
+    </div>
+    <div class="mode eli" onclick="launch('elite-final.html')">
+      <div class="edge"></div>
+      <div class="ml">ELITE</div>
+      <div class="md">duel an ancient rival · 1v1</div>
+    </div>
+    <div class="mode dly" onclick="launch('daily-final.html')">
+      <div class="edge"></div>
+      <div class="ml">DAILY TRIAL</div>
+      <div class="md">one puzzle · the whole world · today only</div>
+    </div>
+    <a href="rules.html" style="display:block;text-align:center;margin-top:6px;font-size:10px;
+      letter-spacing:3px;color:var(--gold-dim);text-transform:uppercase;text-decoration:none;
+      padding:10px;border:1px solid rgba(212,165,68,.12);border-radius:10px;
+      background:rgba(10,8,4,.5)">? HOW TO PLAY</a>
+  </div>
+</div>
+
+<div class="vignette"></div>
+<div class="tap-hint" id="tapHint">
+  <div class="th-inner">
+    <div class="th-dot"></div>
+    <div class="th-t">tap to enter</div>
+  </div>
+</div>
+<div class="replay" id="replay">↻ replay intro</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   TON CONNECT SETUP
+   ══════════════════════════════════════════════════ */
+let tonConnectUI = null;
+let walletAddress = null;
+
+function initTonConnect(){
+  try{
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://sudoku.lexconv.com/tonconnect-manifest.json',
+      buttonRootId: null // we handle UI ourselves
+    });
+
+    // Listen for wallet changes
+    tonConnectUI.onStatusChange(wallet => {
+      if(wallet){
+        const addr = wallet.account.address;
+        // Shorten address for display
+        const short = addr.slice(0,4)+'...'+addr.slice(-4);
+        walletAddress = addr;
+        document.getElementById('wAddr').textContent = short;
+        document.getElementById('wAddr').classList.add('show');
+        document.getElementById('wDot').classList.add('show');
+        document.getElementById('wBtn').textContent = 'Disconnect';
+        document.getElementById('coinsBadge').classList.add('show');
+        // Load coins for this wallet
+        loadWalletCoins(addr);
+        // Save address to localStorage
+        try{ localStorage.setItem('sg_ton_addr', addr); }catch(e){}
+      } else {
+        walletAddress = null;
+        document.getElementById('wAddr').classList.remove('show');
+        document.getElementById('wDot').classList.remove('show');
+        document.getElementById('wBtn').textContent = 'Connect Wallet';
+        document.getElementById('coinsBadge').classList.remove('show');
+        try{ localStorage.removeItem('sg_ton_addr'); }catch(e){}
+      }
+    });
+  } catch(e){
+    console.warn('TonConnect init failed:', e);
+  }
+}
+
+async function handleWalletBtn(){
+  if(!tonConnectUI) return;
+  try{
+    if(walletAddress){
+      await tonConnectUI.disconnect();
+    } else {
+      await tonConnectUI.openModal();
+    }
+  } catch(e){ console.warn(e); }
+}
+
+function loadWalletCoins(addr){
+  // Coins stored per wallet address
+  const key = 'sg_coins_' + addr.slice(-8);
+  const fallback = 'sg_coins'; // legacy key from elite game
+  try{
+    let coins = localStorage.getItem(key);
+    if(coins === null) coins = localStorage.getItem(fallback) || '0';
+    document.getElementById('coinsVal').textContent = parseInt(coins).toLocaleString();
+  }catch(e){}
+}
+
+document.getElementById('wBtn').addEventListener('click', handleWalletBtn);
+
+/* ══════════════════════════════════════════════════
+   YANTRA — exact same as your original index.html
+   ══════════════════════════════════════════════════ */
+const svg = document.getElementById("yantra");
+const NS = "http://www.w3.org/2000/svg";
+const cx = 150, cy = 150;
+const geom = [];
+
+geom.push({t:"polygon", pts:triPoints(cx,cy,70,true)});
+geom.push({t:"polygon", pts:triPoints(cx,cy,70,false)});
+geom.push({t:"circle",  r:78});
+for(let i=0;i<8;i++){ geom.push(petal(cx,cy,78,108,i*45)); }
+geom.push({t:"circle",  r:118});
+geom.push({t:"circle",  r:128});
+
+function triPoints(x,y,r,down){
+  const pts=[];
+  for(let i=0;i<3;i++){ const a=(down?90:-90)+i*120; const rad=a*Math.PI/180;
+    pts.push([x+Math.cos(rad)*r, y+Math.sin(rad)*r]); }
+  return pts.map(p=>p.map(v=>v.toFixed(1)).join(",")).join(" ");
+}
+function petal(x,y,r1,r2,deg){
+  const a=deg*Math.PI/180;
+  const x1=x+Math.cos(a)*r1, y1=y+Math.sin(a)*r1;
+  const x2=x+Math.cos(a)*r2, y2=y+Math.sin(a)*r2;
+  const pa=a+0.28, pb=a-0.28;
+  const cx1=x+Math.cos(pa)*((r1+r2)/2), cy1=y+Math.sin(pa)*((r1+r2)/2);
+  const cx2=x+Math.cos(pb)*((r1+r2)/2), cy2=y+Math.sin(pb)*((r1+r2)/2);
+  return {t:"path", d:`M${x1.toFixed(1)} ${y1.toFixed(1)} Q${cx1.toFixed(1)} ${cy1.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)} Q${cx2.toFixed(1)} ${cy2.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)} Z`};
+}
+
+const drawn = [];
+for(const g of geom){
+  let el;
+  if(g.t==="circle"){ el=document.createElementNS(NS,"circle"); el.setAttribute("cx",cx); el.setAttribute("cy",cy); el.setAttribute("r",g.r); }
+  else if(g.t==="polygon"){ el=document.createElementNS(NS,"polygon"); el.setAttribute("points",g.pts); }
+  else if(g.t==="path"){ el=document.createElementNS(NS,"path"); el.setAttribute("d",g.d); }
+  svg.appendChild(el); drawn.push(el);
+}
+function prep(){ drawn.forEach(el=>{ const len=el.getTotalLength?el.getTotalLength():300; el.style.setProperty("--len",len); el.style.strokeDashoffset=len; }); }
+
+/* ── AUDIO ── */
+let actx=null;
+function tone(freq,dur,delay,gainPeak){
+  if(!actx)return;
+  const t0=actx.currentTime+delay;
+  const osc=actx.createOscillator(), g=actx.createGain();
+  osc.type="sine"; osc.frequency.value=freq;
+  const osc2=actx.createOscillator(), g2=actx.createGain();
+  osc2.type="sine"; osc2.frequency.value=freq*2.0;
+  g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(gainPeak,t0+0.08); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  g2.gain.setValueAtTime(0,t0); g2.gain.linearRampToValueAtTime(gainPeak*0.25,t0+0.08); g2.gain.exponentialRampToValueAtTime(0.0001,t0+dur*0.7);
+  osc.connect(g).connect(actx.destination); osc2.connect(g2).connect(actx.destination);
+  osc.start(t0); osc.stop(t0+dur); osc2.start(t0); osc2.stop(t0+dur);
+}
+
+/* ── INTRO SEQUENCE (exact same as your original) ── */
+const bindu = document.getElementById("bindu");
+function runIntro(){
+  prep();
+  bindu.style.transition="none"; bindu.style.opacity="0"; bindu.style.boxShadow="0 0 0 0 rgba(240,205,114,.7)";
+  drawn.forEach(el=>{ el.style.transition="none"; el.style.strokeDashoffset=el.style.getPropertyValue("--len"); el.style.opacity="1"; });
+  document.getElementById("titleBlock").style.transition="none";
+  document.getElementById("titleBlock").style.opacity="0";
+  document.getElementById("titleBlock").style.transform="translateY(8px)";
+  document.getElementById("underline").style.width="0";
+  document.getElementById("modes").style.transition="none";
+  document.getElementById("modes").style.opacity="0";
+  document.getElementById("modes").style.transform="translateY(12px)";
+  document.getElementById("particles").style.opacity="0";
+  void svg.getBoundingClientRect();
+
+  setTimeout(()=>{
+    bindu.style.transition="opacity 1.2s ease, box-shadow 1.6s ease";
+    bindu.style.opacity="1";
+    bindu.style.boxShadow="0 0 18px 4px rgba(240,205,114,.6)";
+    tone(110, 2.4, 0, 0.18);
+  }, 600);
+
+  const drawStart=1500, perEl=140;
+  drawn.forEach((el,i)=>{
+    setTimeout(()=>{
+      el.style.transition=`stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)`;
+      el.style.strokeDashoffset="0";
+    }, drawStart + i*perEl);
+  });
+
+  const titleAt = drawStart + drawn.length*perEl + 400;
+  setTimeout(()=>{
+    bindu.style.transition="opacity 1s ease";
+    bindu.style.opacity="0";
+    const tb=document.getElementById("titleBlock");
+    tb.style.transition="opacity 1.4s ease, transform 1.4s cubic-bezier(.16,1,.3,1)";
+    tb.style.opacity="1"; tb.style.transform="translateY(0)";
+    document.getElementById("underline").style.transition="width 1.6s ease .3s";
+    document.getElementById("underline").style.width="120px";
+    drawn.forEach(el=>{ el.style.transition="opacity 1.4s ease"; el.style.opacity="0.32"; });
+    tone(146.83, 3.0, 0, 0.14);
+  }, titleAt);
+
+  setTimeout(()=>{
+    const m=document.getElementById("modes");
+    m.style.transition="opacity 1.6s ease, transform 1.6s cubic-bezier(.16,1,.3,1)";
+    m.style.opacity="1"; m.style.transform="translateY(0)";
+    document.getElementById("particles").style.opacity="1";
+    startParticles();
+    // Init TON Connect after intro (needs user gesture already happened)
+    initTonConnect();
+  }, titleAt+1400);
+}
+
+/* ── PARTICLES ── */
+let particlesStarted=false;
+function startParticles(){
+  if(particlesStarted)return; particlesStarted=true;
+  const box=document.getElementById("particles");
+  for(let i=0;i<18;i++){
+    const p=document.createElement("div"); p.className="pt";
+    const x=Math.random()*100, dur=8+Math.random()*10, delay=Math.random()*8;
+    p.style.left=x+"vw"; p.style.top=(60+Math.random()*40)+"vh";
+    box.appendChild(p);
+    p.animate([
+      {transform:"translateY(0)",opacity:0},
+      {opacity:0.5,offset:0.2},
+      {opacity:0.4,offset:0.8},
+      {transform:"translateY(-70vh)",opacity:0}
+    ],{duration:dur*1000,delay:delay*1000,iterations:Infinity,easing:"linear"});
+  }
+}
+
+/* ── LAUNCH GAME ── */
+function launch(url){
+  // Pass wallet address to game via sessionStorage
+  try{
+    if(walletAddress) sessionStorage.setItem('sg_ton_addr', walletAddress);
+  }catch(e){}
+  window.location.href = url;
+}
+
+/* ── TAP TO START ── */
+document.getElementById("tapHint").onclick=function(){
+  try{ actx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  this.classList.add("gone");
+  runIntro();
+};
+document.getElementById("replay").onclick=runIntro;
+
+/* ── SKIP INTRO (back from game) ── */
+if(new URLSearchParams(window.location.search).get("menu")==="1"){
+  document.getElementById("tapHint").classList.add("gone");
+  try{ actx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  document.getElementById("modes").style.opacity="1";
+  document.getElementById("modes").style.transform="translateY(0)";
+  document.getElementById("titleBlock").style.opacity="1";
+  document.getElementById("titleBlock").style.transform="translateY(0)";
+  drawn.forEach(el=>{ el.style.strokeDashoffset="0"; el.style.opacity="0.32"; });
+  startParticles();
+  // Init TON on skip too
+  setTimeout(initTonConnect, 500);
+}
+</script>
+</body>
+</html>
