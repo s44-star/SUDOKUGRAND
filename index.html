@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>SUDOKU GRAND</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<style>
+  :root{
+    --void:#040507;--gold:#d4a544;--gold-bright:#f0cd72;--gold-dim:#7a5e24;
+    --ash:#4a5266;--ice:#e8edf5;--neon:#c8943a;--foe:#a06828;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  html,body{height:100%;overflow:hidden}
+  body{background:var(--void);color:var(--ice);font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;position:relative}
+
+  /* ── FULL SCREEN LAYOUT ── */
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ── TOP BAR ── */
+  .topbar{flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px 10px;background:rgba(4,5,7,.95);
+    border-bottom:1px solid rgba(212,165,68,.08);z-index:10}
+  .topbar-l{display:flex;align-items:center;gap:10px}
+  .tg-user{display:flex;align-items:center;gap:7px}
+  .tg-av{width:26px;height:26px;border-radius:50%;background:rgba(212,165,68,.15);
+    border:1px solid var(--gold-dim);display:grid;place-items:center;
+    font-size:11px;color:var(--gold-bright);overflow:hidden;flex:none}
+  .tg-av img{width:100%;height:100%;object-fit:cover}
+  .tg-name{font-size:11px;color:var(--ash);letter-spacing:1px}
+  .coin-badge{display:flex;align-items:center;gap:5px;
+    background:rgba(212,165,68,.08);border:1px solid rgba(212,165,68,.2);
+    border-radius:20px;padding:4px 10px;font-size:11px;
+    color:var(--gold-bright);font-weight:600;letter-spacing:1px}
+  .topbar-r{display:flex;align-items:center;gap:8px}
+  .wdot{width:6px;height:6px;border-radius:50%;background:#4fd6a8;
+    box-shadow:0 0 8px #4fd6a8;display:none;flex:none}
+  .wdot.on{display:block}
+  .wbtn{font-size:9px;letter-spacing:1px;color:var(--gold-bright);text-transform:uppercase;
+    background:rgba(212,165,68,.1);border:1px solid rgba(212,165,68,.3);
+    border-radius:16px;padding:6px 12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .wbtn:active{transform:scale(.95)}
+  .waddr{font-size:9px;color:var(--ash);letter-spacing:.5px;display:none}
+  .waddr.on{display:block}
+
+  /* ── YANTRA SECTION ── */
+  .yantra-section{flex:none;display:flex;align-items:center;justify-content:center;
+    padding:8px 0 4px;position:relative}
+  .yantra-wrap{position:relative;width:min(54vw,220px);aspect-ratio:1;
+    display:flex;align-items:center;justify-content:center}
+  svg.yantra{width:100%;height:100%;overflow:visible}
+  svg.yantra path,svg.yantra circle,svg.yantra polygon{
+    stroke:var(--gold);fill:none;stroke-width:1;
+    filter:drop-shadow(0 0 3px rgba(212,165,68,.5));
+    stroke-dasharray:var(--len);stroke-dashoffset:var(--len);}
+  .bindu{position:absolute;width:6px;height:6px;border-radius:50%;
+    background:var(--gold-bright);box-shadow:0 0 14px var(--gold);opacity:0}
+  .title-block{position:absolute;text-align:center;opacity:0;transform:translateY(6px);
+    white-space:nowrap}
+  .kicker{font-size:7px;letter-spacing:6px;color:var(--gold-dim);text-transform:uppercase;margin-bottom:6px}
+  .title{font-size:clamp(18px,5.5vw,26px);letter-spacing:6px;font-weight:300;color:var(--ice)}
+  .title b{font-weight:600;color:var(--gold-bright)}
+  .underline{width:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px auto 0}
+
+  /* ── MODES LIST ── */
+  .modes-section{flex:1;overflow-y:auto;padding:8px 18px 16px;
+    display:flex;flex-direction:column;gap:9px;-webkit-overflow-scrolling:touch}
+  .modes-section::-webkit-scrollbar{display:none}
+
+  .mode{position:relative;border:1px solid rgba(74,82,102,.28);border-radius:13px;
+    padding:14px 18px;cursor:pointer;
+    background:linear-gradient(165deg,rgba(10,8,4,.88),rgba(6,5,2,.95));
+    overflow:hidden;transition:transform .14s,border-color .2s;flex:none}
+  .mode:active{transform:scale(.98)}
+  .mode .ml{font-size:14px;font-weight:700;letter-spacing:3px}
+  .mode.adv .ml{color:var(--neon)}
+  .mode.eli .ml{color:var(--foe)}
+  .mode.dly .ml{color:var(--gold-bright)}
+  .mode .md{font-size:8.5px;color:var(--ash);margin-top:3px;letter-spacing:1px}
+  .mode .edge{position:absolute;left:0;top:0;bottom:0;width:2px;opacity:.7}
+  .mode.adv .edge{background:var(--gold-bright)}
+  .mode.eli .edge{background:var(--gold-dim)}
+  .mode.dly .edge{background:var(--gold)}
+  .mode.dly{border-color:rgba(212,165,68,.2)}
+
+  /* ── REFERRAL ── */
+  .refcard{position:relative;border:1px solid rgba(212,165,68,.18);border-radius:13px;
+    padding:13px 18px;cursor:pointer;
+    background:linear-gradient(165deg,rgba(14,10,2,.9),rgba(8,6,1,.95));
+    overflow:hidden;transition:transform .14s;flex:none;
+    display:flex;align-items:center;justify-content:space-between}
+  .refcard:active{transform:scale(.98)}
+  .refcard-l .rt{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--gold-bright)}
+  .refcard-l .rd{font-size:8.5px;color:var(--ash);margin-top:3px;letter-spacing:1px}
+  .refcard .redge{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);opacity:.45}
+  .rbadge{font-size:10px;color:var(--gold-bright);background:rgba(212,165,68,.12);
+    border:1px solid rgba(212,165,68,.28);border-radius:10px;padding:4px 10px;
+    letter-spacing:1px;white-space:nowrap}
+
+  .howbtn{display:block;text-align:center;font-size:9px;letter-spacing:3px;
+    color:var(--gold-dim);text-transform:uppercase;text-decoration:none;
+    padding:10px;border:1px solid rgba(212,165,68,.1);border-radius:10px;
+    background:rgba(10,8,4,.5);flex:none}
+
+  /* particles */
+  .particles{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0;transition:opacity 3s}
+  .pt{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--gold);opacity:0}
+  .vignette{position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:radial-gradient(60% 50% at 50% 35%,transparent 20%,rgba(4,5,7,.5) 100%)}
+
+  /* tap hint */
+  .tap-hint{position:fixed;inset:0;z-index:50;display:flex;align-items:center;
+    justify-content:center;background:var(--void);cursor:pointer;transition:opacity .8s}
+  .tap-hint.gone{opacity:0;pointer-events:none}
+  .th-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);
+    margin:0 auto 18px;animation:breathe 2.4s ease-in-out infinite;
+    box-shadow:0 0 16px var(--gold)}
+  @keyframes breathe{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+  .th-t{font-size:10px;letter-spacing:6px;color:var(--gold-dim);text-transform:uppercase;text-align:center}
+  .replay{position:fixed;bottom:10px;right:14px;font-size:8px;letter-spacing:2px;
+    color:#1e2535;cursor:pointer;z-index:60;text-transform:uppercase}
+
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);
+    background:rgba(8,10,18,.96);border:1px solid rgba(212,165,68,.3);
+    padding:10px 18px;border-radius:10px;font-size:11px;color:var(--gold-bright);
+    opacity:0;pointer-events:none;transition:all .25s;z-index:99;
+    max-width:88%;text-align:center;white-space:nowrap}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+<div class="vignette"></div>
+
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="tg-user">
+        <div class="tg-av" id="tgAv">?</div>
+        <span class="tg-name" id="tgName">Player</span>
+      </div>
+      <div class="coin-badge">⊙ <span id="coinVal">0</span></div>
+    </div>
+    <div class="topbar-r">
+      <div class="wdot" id="wDot"></div>
+      <div class="waddr" id="wAddr"></div>
+      <button class="wbtn" id="wBtn">Connect Wallet</button>
+    </div>
+  </div>
+
+  <!-- YANTRA -->
+  <div class="yantra-section">
+    <div class="yantra-wrap">
+      <div class="bindu" id="bindu"></div>
+      <svg class="yantra" id="yantra" viewBox="0 0 300 300"></svg>
+      <div class="title-block" id="titleBlock">
+        <div class="kicker">enter the</div>
+        <div class="title">SUDOKU <b>GRAND</b></div>
+        <div class="underline" id="underline"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODES -->
+  <div class="modes-section">
+    <div class="mode adv" onclick="launch('advanced-final.html')">
+      <div class="edge"></div>
+      <div class="ml">ADVANCED</div>
+      <div class="md">the solitary descent · solo</div>
+    </div>
+    <div class="mode eli" onclick="launch('elite-final.html')">
+      <div class="edge"></div>
+      <div class="ml">ELITE</div>
+      <div class="md">duel an ancient rival · 1v1</div>
+    </div>
+    <div class="mode dly" onclick="launch('daily-final.html')">
+      <div class="edge"></div>
+      <div class="ml">DAILY TRIAL</div>
+      <div class="md">one puzzle · whole world · today only</div>
+    </div>
+    <div class="refcard" id="refBtn">
+      <div class="redge"></div>
+      <div class="refcard-l">
+        <div class="rt">INVITE FRIENDS</div>
+        <div class="rd">both earn 50 coins on join</div>
+      </div>
+      <div class="rbadge">+50 ⊙</div>
+    </div>
+    <a href="rules.html" class="howbtn">? HOW TO PLAY</a>
+  </div>
+</div>
+
+<div class="tap-hint" id="tapHint">
+  <div><div class="th-dot"></div><div class="th-t">tap to enter</div></div>
+</div>
+<div class="replay" id="replay">↻ replay intro</div>
+<div id="toast"></div>
+
+<script>
+/* ── TELEGRAM ── */
+const tg=window.Telegram?.WebApp;
+let tgUser=null;
+if(tg){
+  tg.ready();tg.expand();
+  tg.setHeaderColor('#040507');tg.setBackgroundColor('#040507');
+  if(tg.disableVerticalSwipes)tg.disableVerticalSwipes();
+  tgUser=tg.initDataUnsafe?.user||null;
+  if(tgUser){
+    const nm=document.getElementById('tgName');
+    nm.textContent=tgUser.first_name||'Player';
+    const av=document.getElementById('tgAv');
+    if(tgUser.photo_url){
+      av.innerHTML=`<img src="${tgUser.photo_url}" alt=""/>`;
+    } else {
+      av.textContent=(tgUser.first_name||'P').charAt(0).toUpperCase();
+    }
+    document.getElementById('coinVal').textContent=getCoins(tgUser.id).toLocaleString();
+    const sp=tg.initDataUnsafe?.start_param;
+    if(sp&&sp.startsWith('ref_')) handleReferral(sp.replace('ref_',''),tgUser.id);
+  }
+}
+function haptic(t='light'){try{tg?.HapticFeedback?.impactOccurred(t);}catch(e){}}
+function hapticN(t='success'){try{tg?.HapticFeedback?.notificationOccurred(t);}catch(e){}}
+
+/* ── COINS ── */
+function getCoins(uid){try{return parseInt(localStorage.getItem('sg_coins_'+(uid||'guest'))||'0');}catch(e){return 0;}}
+function setCoins(uid,n){try{localStorage.setItem('sg_coins_'+(uid||'guest'),n);}catch(e){}document.getElementById('coinVal').textContent=n.toLocaleString();}
+function addCoins(uid,n){const c=getCoins(uid);setCoins(uid,c+n);return c+n;}
+
+/* ── REFERRAL ── */
+function handleReferral(refId,newId){
+  if(!refId||!newId||String(refId)===String(newId))return;
+  try{
+    const k='sg_ref_done_'+newId;
+    if(localStorage.getItem(k))return;
+    localStorage.setItem(k,'1');
+    addCoins(newId,50);
+    const pk='sg_ref_pending_'+refId;
+    localStorage.setItem(pk,(parseInt(localStorage.getItem(pk)||'0')+50));
+    toast('Welcome bonus! +50 coins ⊙');
+  }catch(e){}
+}
+function claimPending(){
+  if(!tgUser)return;
+  try{
+    const k='sg_ref_pending_'+tgUser.id;
+    const p=parseInt(localStorage.getItem(k)||'0');
+    if(p>0){localStorage.removeItem(k);addCoins(tgUser.id,p);toast('Friend joined! +'+p+' coins ⊙');}
+  }catch(e){}
+}
+function shareRef(){
+  haptic('medium');
+  if(!tgUser){toast('Open in Telegram to invite');return;}
+  const bot='SudokuGrandBot'; // ← YOUR BOT USERNAME
+  const link=`https://t.me/${bot}?start=ref_${tgUser.id}`;
+  const txt=`🎮 Play Sudoku Grand on TON!\nMythic circuit sudoku · daily challenges · earn $YANTRA coins\n\n${link}`;
+  if(tg?.openTelegramLink){
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(txt)}`);
+  } else {
+    navigator.clipboard?.writeText(link).then(()=>toast('Link copied!')).catch(()=>toast(link));
+  }
+}
+document.getElementById('refBtn').addEventListener('click',shareRef);
+
+/* ── TON CONNECT ── */
+let tonUI=null,walletAddr=null;
+function initTON(){
+  try{
+    tonUI=new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl:'https://sudoku.lexconv.com/tonconnect-manifest.json',
+      buttonRootId:null
+    });
+    tonUI.onStatusChange(w=>{
+      if(w){
+        walletAddr=w.account.address;
+        document.getElementById('wAddr').textContent=walletAddr.slice(0,4)+'...'+walletAddr.slice(-4);
+        document.getElementById('wAddr').classList.add('on');
+        document.getElementById('wDot').classList.add('on');
+        document.getElementById('wBtn').textContent='Disconnect';
+        try{localStorage.setItem('sg_ton_addr',walletAddr);}catch(e){}
+        hapticN('success');toast('Wallet connected ✓');
+      } else {
+        walletAddr=null;
+        document.getElementById('wAddr').classList.remove('on');
+        document.getElementById('wDot').classList.remove('on');
+        document.getElementById('wBtn').textContent='Connect Wallet';
+        try{localStorage.removeItem('sg_ton_addr');}catch(e){}
+      }
+    });
+  }catch(e){console.warn(e);}
+}
+document.getElementById('wBtn').addEventListener('click',async()=>{
+  haptic();if(!tonUI)return;
+  if(walletAddr)await tonUI.disconnect();else await tonUI.openModal();
+});
+
+/* ── YANTRA ── */
+const svg=document.getElementById('yantra');
+const NS='http://www.w3.org/2000/svg',cx=150,cy=150,geom=[];
+geom.push({t:'polygon',pts:tri(cx,cy,70,true)});
+geom.push({t:'polygon',pts:tri(cx,cy,70,false)});
+geom.push({t:'circle',r:78});
+for(let i=0;i<8;i++)geom.push(pet(cx,cy,78,108,i*45));
+geom.push({t:'circle',r:118});
+geom.push({t:'circle',r:128});
+function tri(x,y,r,down){const p=[];for(let i=0;i<3;i++){const a=(down?90:-90)+i*120,rad=a*Math.PI/180;p.push([x+Math.cos(rad)*r,y+Math.sin(rad)*r]);}return p.map(q=>q.map(v=>v.toFixed(1)).join(',')).join(' ');}
+function pet(x,y,r1,r2,deg){const a=deg*Math.PI/180,x1=x+Math.cos(a)*r1,y1=y+Math.sin(a)*r1,x2=x+Math.cos(a)*r2,y2=y+Math.sin(a)*r2,pa=a+0.28,pb=a-0.28,cx1=x+Math.cos(pa)*((r1+r2)/2),cy1=y+Math.sin(pa)*((r1+r2)/2),cx2=x+Math.cos(pb)*((r1+r2)/2),cy2=y+Math.sin(pb)*((r1+r2)/2);return {t:'path',d:`M${x1.toFixed(1)} ${y1.toFixed(1)} Q${cx1.toFixed(1)} ${cy1.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)} Q${cx2.toFixed(1)} ${cy2.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)} Z`};}
+const drawn=[];
+for(const g of geom){let el;if(g.t==='circle'){el=document.createElementNS(NS,'circle');el.setAttribute('cx',cx);el.setAttribute('cy',cy);el.setAttribute('r',g.r);}else if(g.t==='polygon'){el=document.createElementNS(NS,'polygon');el.setAttribute('points',g.pts);}else{el=document.createElementNS(NS,'path');el.setAttribute('d',g.d);}svg.appendChild(el);drawn.push(el);}
+function prep(){drawn.forEach(el=>{const len=el.getTotalLength?el.getTotalLength():300;el.style.setProperty('--len',len);el.style.strokeDashoffset=len;});}
+
+/* ── AUDIO ── */
+let actx=null;
+function tone(freq,dur,delay,peak){if(!actx)return;const t0=actx.currentTime+delay;const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(peak,t0+0.08);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g).connect(actx.destination);o.start(t0);o.stop(t0+dur);}
+
+/* ── INTRO ── */
+const bindu=document.getElementById('bindu');
+function runIntro(){
+  prep();
+  bindu.style.cssText='transition:none;opacity:0';
+  drawn.forEach(el=>{el.style.transition='none';el.style.strokeDashoffset=el.style.getPropertyValue('--len');el.style.opacity='1';});
+  document.getElementById('titleBlock').style.cssText='transition:none;opacity:0;transform:translateY(6px)';
+  document.getElementById('underline').style.width='0';
+  document.getElementById('particles').style.opacity='0';
+  void svg.getBoundingClientRect();
+  setTimeout(()=>{bindu.style.transition='opacity 1.2s ease';bindu.style.opacity='1';bindu.style.boxShadow='0 0 16px 3px rgba(240,205,114,.6)';tone(110,2.4,0,0.18);},500);
+  const ds=1200,pe=120;
+  drawn.forEach((el,i)=>setTimeout(()=>{el.style.transition='stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)';el.style.strokeDashoffset='0';},ds+i*pe));
+  const ta=ds+drawn.length*pe+300;
+  setTimeout(()=>{
+    bindu.style.opacity='0';
+    const tb=document.getElementById('titleBlock');
+    tb.style.transition='opacity 1.3s ease,transform 1.3s cubic-bezier(.16,1,.3,1)';
+    tb.style.opacity='1';tb.style.transform='translateY(0)';
+    document.getElementById('underline').style.transition='width 1.4s ease .3s';
+    document.getElementById('underline').style.width='100px';
+    drawn.forEach(el=>{el.style.transition='opacity 1.3s ease';el.style.opacity='0.3';});
+    tone(146.83,3.0,0,0.12);
+  },ta);
+  setTimeout(()=>{document.getElementById('particles').style.opacity='1';startParticles();initTON();claimPending();},ta+1200);
+}
+
+/* ── PARTICLES ── */
+let psOn=false;
+function startParticles(){
+  if(psOn)return;psOn=true;
+  const box=document.getElementById('particles');
+  for(let i=0;i<14;i++){const p=document.createElement('div');p.className='pt';p.style.left=Math.random()*100+'vw';p.style.top=(60+Math.random()*40)+'vh';box.appendChild(p);p.animate([{transform:'translateY(0)',opacity:0},{opacity:.5,offset:.2},{opacity:.4,offset:.8},{transform:'translateY(-70vh)',opacity:0}],{duration:(8+Math.random()*10)*1000,delay:Math.random()*8*1000,iterations:Infinity,easing:'linear'});}
+}
+
+/* ── TOAST ── */
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
+
+/* ── LAUNCH ── */
+function launch(url){
+  haptic('medium');
+  try{if(walletAddr)sessionStorage.setItem('sg_ton_addr',walletAddr);if(tgUser)sessionStorage.setItem('sg_tg_uid',tgUser.id);}catch(e){}
+  window.location.href=url;
+}
+
+/* ── START ── */
+document.getElementById('tapHint').onclick=function(){
+  try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  haptic();this.classList.add('gone');runIntro();
+};
+document.getElementById('replay').onclick=()=>{haptic();runIntro();};
+
+if(new URLSearchParams(location.search).get('menu')==='1'){
+  document.getElementById('tapHint').classList.add('gone');
+  try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  document.getElementById('titleBlock').style.cssText='opacity:1;transform:translateY(0)';
+  document.getElementById('underline').style.width='100px';
+  drawn.forEach(el=>{el.style.strokeDashoffset='0';el.style.opacity='0.3';});
+  startParticles();
+  setTimeout(()=>{initTON();claimPending();},400);
+}
+</script>
+</body>
+</html>
